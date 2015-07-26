@@ -19,6 +19,8 @@ Velloso, E.; Bulling, A.; Gellersen, H.; Ugulino, W.; Fuks, H. Qualitative Activ
 library(caret)
 library(ggplot2)
 library(rpart.plot)
+library(randomForest)
+library(rpart)
 ```
 
 ##Let's set a seed so that the results are reproducible
@@ -35,14 +37,9 @@ download.file("https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.c
 testing_data <- read.csv("testing.csv",na.strings = c("NA","","<NA>"))
 ```
 
-##Let's see the dependent variable in a table to see the distribution
+##Let's check the training dataset to see what we get from the observations
 ```{r}
-table(training_data$classe)
-```
-
-##Let's check the training dataset to see what we get from the first 10 observations
-```{r}
-head(training_data,n=10)
+str(training_data)
 ```
 
 ##Data Cleanup
@@ -70,10 +67,10 @@ training_test <- training_data[-inTrain,]
 ```
 
 ##Selection of Algorithm
-This is a classification problem as opposed to a regression problem. Therefore we will use the classification tree and random forest as two possible ML algorithms and see which matches our need the most
+This is a classification problem as opposed to a regression problem. Therefore we will use the classification tree and random forest as two possible ML algorithms and see which matches our need the most. 
 
 ##Using rpart / Classification Trees
-###Let's see the dependent variable in a table to see the distribution
+Let's see the dependent variable in a table to see the distribution
 ```{r}
 table(training_train$classe)
 ```
@@ -81,22 +78,26 @@ table(training_train$classe)
 ###Classification Tree 
 Let's create the model
 ```{r}
-modFit <- train(classe~.,data=training_train,method="rpart",method="class")
+modFit <- rpart(classe ~ .,data=training_train,method ="class")
+
 ```
 
-```{r, echo=FALSE}
-rpart.plot(modFit$finalModel)
+```{r}
+rpart.plot(modFit)
 ```
 
 Let's test the model on the training subset we have alloted for testing
 ```{r}
-predicted_values <- predict(modFit, newdata=training_test)
+predicted_values <- predict(modFit, newdata=training_test, type="class")
 ```
 
 Let's create the confusion matrix for these predicted values
 ```{r}
 confusionMatrix(predicted_values,training_test$classe)
 ```
+
+##Conclusion:
+We see that with the Classification Tree, we obtain accuracy of 72.69%. This is not a good enough accuracy for our needs as the error rate is well above 20% (27.31%)
 
 ##Using Random Forest
 ###Let's see the dependent variable in a table to see the distribution
@@ -107,20 +108,17 @@ table(training_train$classe)
 ###Random Forest 
 Let's create the model
 ```{r}
-modFit2 <- train(classe~.,data=training_train,method="rf", type="class")
-```
-
-```{r, echo=FALSE}
-rpart.plot(modFit2$finalModel)
+modFit2 <- randomForest(classe~.,data=training_train,method="class")
 ```
 
 Let's test the model on the training subset we have alloted for testing
 ```{r}
-predicted_values_rf <- predict(modFit2, newdata=training_test)
+predicted_values_rf <- predict(modFit2, newdata=training_test, type="class")
 ```
 
 Let's create the confusion matrix for these predicted values
 ```{r}
 confusionMatrix(predicted_values_rf,training_test$classe)
 ```
-
+##Conclusion:
+We see that with the Random Forest algorithm, we obtain accuracy of 99.51%. This is a pretty good fit for our needs as the out of sample error rate is 0.49%
