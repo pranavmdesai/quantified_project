@@ -1,0 +1,126 @@
+---
+title: "quantified_self"
+author: "Pranav"
+date: "July 26, 2015"
+output: html_document
+---
+
+##Background
+Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible to collect a large amount of data about personal activity relatively inexpensively. These type of devices are part of the quantified self movement – a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior, or because they are tech geeks. 
+
+##Goal of the project 
+The goal of your project is to predict the manner in which the observation set did their exercise. This is the "classe" variable in the training set. The project contains a report describing how the model was built, how cross validation was used, what the out of sample error is, in addition to the design choices. As part of the project, the model is also expected to predict a test set of 20 observations
+
+##Dataset used for this project is derived from
+Velloso, E.; Bulling, A.; Gellersen, H.; Ugulino, W.; Fuks, H. Qualitative Activity Recognition of Weight Lifting Exercises. Proceedings of 4th International Conference in Cooperation with SIGCHI (Augmented Human '13) . Stuttgart, Germany: ACM SIGCHI, 2013.
+
+##Let's load the requisite packages
+```{r}
+library(caret)
+library(ggplot2)
+library(rpart.plot)
+```
+
+##Let's set a seed so that the results are reproducible
+```{r}
+set.seed(99999)
+```
+
+##Let's load the training and testing data. First we download the file and then we load the data into our variables training_data and testing_data respectively 
+```{r}
+download.file("https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv", method="curl",destfile = "training.csv")
+training_data <- read.csv("training.csv",na.strings = c("NA","","<NA>"))
+
+download.file("https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv", method="curl",destfile = "testing.csv")
+testing_data <- read.csv("testing.csv",na.strings = c("NA","","<NA>"))
+```
+
+##Let's see the dependent variable in a table to see the distribution
+```{r}
+table(training_data$classe)
+```
+
+##Let's check the training dataset to see what we get from the first 10 observations
+```{r}
+head(training_data,n=10)
+```
+
+##Data Cleanup
+We see a lot of NA values here. Columns that contain only NA don't contribute anything to our model. Let's remove these values to clean our data up
+
+```{r}
+training_data <- training_data[,colSums(is.na(training_data))==0]
+testing_data <- testing_data[,colSums(is.na(testing_data))==0]
+```
+
+Additionally there are variables that contribute nothing to the dataset. It seems like columns 1 through 7 are important when collecting readings for book-keeping but don't contribute anything meaningful for the analysis we want (correct vs. incorrect way of doing the exercise)
+```{r}
+training_data <- training_data[,-c(1:7)]
+testing_data <- testing_data[,-c(1:7)]
+```
+
+
+##Cross Validation 
+Let's divide the training data-set into two parts so that we can do some testing on that data and can then use the final model we select for test data set
+
+```{r}
+inTrain <- createDataPartition(training_data$classe,p=0.7,list=F)
+training_train <- training_data[inTrain,]
+training_test <- training_data[-inTrain,]
+```
+
+##Selection of Algorithm
+This is a classification problem as opposed to a regression problem. Therefore we will use the classification tree and random forest as two possible ML algorithms and see which matches our need the most
+
+##Using rpart / Classification Trees
+###Let's see the dependent variable in a table to see the distribution
+```{r}
+table(training_train$classe)
+```
+
+###Classification Tree 
+Let's create the model
+```{r}
+modFit <- train(classe~.,data=training_train,method="rpart",method="class")
+```
+
+```{r, echo=FALSE}
+rpart.plot(modFit$finalModel)
+```
+
+Let's test the model on the training subset we have alloted for testing
+```{r}
+predicted_values <- predict(modFit, newdata=training_test)
+```
+
+Let's create the confusion matrix for these predicted values
+```{r}
+confusionMatrix(predicted_values,training_test$classe)
+```
+
+##Using Random Forest
+###Let's see the dependent variable in a table to see the distribution
+```{r}
+table(training_train$classe)
+```
+
+###Random Forest 
+Let's create the model
+```{r}
+modFit2 <- train(classe~.,data=training_train,method="rf", type="class")
+```
+
+```{r, echo=FALSE}
+rpart.plot(modFit2$finalModel)
+```
+
+Let's test the model on the training subset we have alloted for testing
+```{r}
+predicted_values_rf <- predict(modFit2, newdata=training_test)
+```
+
+Let's create the confusion matrix for these predicted values
+```{r}
+confusionMatrix(predicted_values_rf,training_test$classe)
+```
+
