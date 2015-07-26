@@ -122,3 +122,10 @@ confusionMatrix(predicted_values_rf,training_test$classe)
 ```
 ##Conclusion:
 We see that with the Random Forest algorithm, we obtain accuracy of 99.51%. This is a pretty good fit for our needs as the out of sample error rate is 0.49%
+
+##Running the test on testing_data
+Let's run our model to predict the testing data
+```{r}
+predicted_values_testing <- predict(modFit2, newdata=testing_data, type="class")
+print(predicted_values_testing)
+```
